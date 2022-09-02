@@ -1,4 +1,0 @@
-Sounds.zip
-Sounds/
-assets.zip
-deliverables/
