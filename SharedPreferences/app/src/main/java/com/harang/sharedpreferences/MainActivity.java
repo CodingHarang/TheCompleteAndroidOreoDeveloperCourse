@@ -7,6 +7,9 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 
+import java.io.IOException;
+import java.util.ArrayList;
+
 public class MainActivity extends AppCompatActivity {
 
   @Override
@@ -15,9 +18,31 @@ public class MainActivity extends AppCompatActivity {
     setContentView(R.layout.activity_main);
 
     SharedPreferences sharedPreferences = this.getSharedPreferences("com.harang.sharedpreferences", Context.MODE_PRIVATE);
-    sharedPreferences.edit().putString("username","harang").apply();
-    String username = sharedPreferences.getString("username", "");
+    //sharedPreferences.edit().putString("username","harang").apply();
+    ArrayList<String> friends = new ArrayList<>();
 
-    Log.i("preference", username);
+    friends.add("Fido");
+    friends.add("Sarah");
+    friends.add("Jones");
+
+    try {
+      sharedPreferences.edit().putString("friends", ObjectSerializer.serialize(friends)).apply();
+
+      Log.i("friends", ObjectSerializer.serialize(friends));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
+    ArrayList<String> newFriends = new ArrayList<>();
+    try {
+      newFriends = (ArrayList<String>) ObjectSerializer.deserialize(sharedPreferences.getString("friends", ObjectSerializer.serialize(new ArrayList<>())));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
+    Log.i("new Friends", newFriends.toString());
+//    String username = sharedPreferences.getString("username", "");
+//
+//    Log.i("preference", username);
   }
 }
