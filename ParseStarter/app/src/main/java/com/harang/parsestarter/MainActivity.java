@@ -8,124 +8,159 @@
  */
 package com.harang.parsestarter;
 
+import android.Manifest;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
+import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.parse.FindCallback;
 import com.parse.GetCallback;
+import com.parse.LogInCallback;
 import com.parse.ParseAnalytics;
 import com.parse.ParseException;
+import com.parse.ParseFile;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
+import com.parse.ParseUser;
 import com.parse.SaveCallback;
+import com.parse.SignUpCallback;
 
+import java.io.ByteArrayOutputStream;
 import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity {
 
+  Boolean signUpModeActive = true;
+  TextView txtLogin;
+  EditText edtUsername, edtPassword;
+  ImageView imgLogo;
+  ConstraintLayout backgroundLayout;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
-
-//    ParseObject score = new ParseObject("Score");
-//    score.put("username", "sean");
-//    score.put("score", 55);
-//    score.saveInBackground(new SaveCallback() {
-//      @Override
-//      public void done(ParseException e) {
-//        if(e == null) {
-//          Log.i("Success", "We saved the score");
-//        } else {
-//          e.printStackTrace();
-//        }
-//      }
-//    });
-
-
-//    ParseQuery<ParseObject> query = ParseQuery.getQuery("Score");
-//    query.getInBackground("bXO68vYM3h", new GetCallback<ParseObject>() {
-//      @Override
-//      public void done(ParseObject object, ParseException e) {
-//        if(e == null && object != null) {
-//          object.put("score", 85);
-//          object.saveInBackground();
-//          Log.i("username", object.getString("username"));
-//          Log.i("score", "" + object.getInt("score"));
-//        } else {
-//          e.printStackTrace();
-//        }
-//      }
-//    });
-
-
-//    ParseObject tweet = new ParseObject("Tweet");
-//    tweet.put("username", "harang");
-//    tweet.put("tweet", "I like game");
-//    tweet.saveInBackground(new SaveCallback() {
-//      @Override
-//      public void done(ParseException e) {
-//        if(e == null) {
-//          Log.i("OK", "success");
-//        } else {
-//          e.printStackTrace();
-//        }
-//      }
-//    });
-//
-//    ParseQuery<ParseObject> query = ParseQuery.getQuery("Tweet");
-//    query.getInBackground("pgmlHkRtjd", new GetCallback<ParseObject>() {
-//      @Override
-//      public void done(ParseObject object, ParseException e) {
-//        if(e == null && object != null) {
-//          object.put("tweet", "I like study");
-//          object.saveInBackground();
-//          Log.i("username", object.getString("username"));
-//          Log.i("tweet", object.getString("tweet"));
-//        } else {
-//          e.printStackTrace();
-//        }
-//      }
-//    });
-
-//    ParseQuery<ParseObject> query = ParseQuery.getQuery("Score");
-//
-//    query.whereEqualTo("username", "sean");
-//    query.setLimit(1);
-//
-//    query.findInBackground(new FindCallback<ParseObject>() {
-//      @Override
-//      public void done(List<ParseObject> objects, ParseException e) {
-//        if(e == null) {
-//          if(objects.size() > 0) {
-//            for(ParseObject object: objects) {
-//              Log.i("username", object.getString("username"));
-//              Log.i("score", Integer.toString(object.getInt("score")));
-//            }
-//          }
-//        }
-//      }
-//    });
-
-
-    ParseQuery<ParseObject> query = ParseQuery.getQuery("Score");
-    query.whereGreaterThan("score", 50);
-    query.findInBackground(new FindCallback<ParseObject>() {
+    txtLogin = findViewById(R.id.txtLogin);
+    edtUsername = findViewById(R.id.edtUsername);
+    edtPassword = findViewById(R.id.edtPassword);
+    imgLogo = findViewById(R.id.imgLogo);
+    backgroundLayout = findViewById(R.id.backgroundLayout);
+    imgLogo.setOnClickListener(new View.OnClickListener() {
       @Override
-      public void done(List<ParseObject> objects, ParseException e) {
-        if(e == null && objects != null) {
-          for(ParseObject score: objects) {
-            score.put("score", score.getInt("score") + 20);
-            score.saveInBackground();
-          }
-        }
+      public void onClick(View view) {
+        onClicked(view);
       }
     });
+
+    backgroundLayout.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View view) {
+        onClicked(view);
+      }
+    });
+
+    txtLogin.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View view) {
+        onClicked(view);
+      }
+    });
+
+    edtPassword.setOnKeyListener(new View.OnKeyListener() {
+      @Override
+      public boolean onKey(View view, int i, KeyEvent keyEvent) {
+        if(i == KeyEvent.KEYCODE_ENTER && keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
+          signUpClicked(view);
+        }
+        return false;
+      }
+    });
+
+    if(ParseUser.getCurrentUser() != null) {
+      showUserList();
+    }
+
     ParseAnalytics.trackAppOpenedInBackground(getIntent());
   }
 
+  public void signUpClicked(View view) {
+
+    if(edtUsername.getText().toString().matches("") || edtPassword.getText().toString().matches("")) {
+      Toast.makeText(this, "A username and a password are required.", Toast.LENGTH_SHORT).show();
+    } else {
+      if(signUpModeActive) {
+        ParseUser user = new ParseUser();
+        user.setUsername(edtUsername.getText().toString());
+        user.setPassword(edtPassword.getText().toString());
+
+        user.signUpInBackground(new SignUpCallback() {
+          @Override
+          public void done(ParseException e) {
+            if (e == null) {
+              Log.i("Signup", "Success");
+              showUserList();
+            } else {
+              Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+          }
+        });
+      } else {
+        ParseUser.logInInBackground(edtUsername.getText().toString(), edtPassword.getText().toString(), new LogInCallback() {
+          @Override
+          public void done(ParseUser user, ParseException e) {
+            if(user != null) {
+              Log.i("Login", "ok");
+              showUserList();
+            } else {
+              Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+          }
+        });
+      }
+    }
+  }
+
+  public void onClicked(View view) {
+    if(view.getId() == R.id.txtLogin) {
+      Button btnSignup = findViewById(R.id.btnSignup);
+      if(signUpModeActive) {
+        signUpModeActive = false;
+        btnSignup.setText("Login");
+        txtLogin.setText("or, Signup");
+      } else {
+        signUpModeActive = true;
+        btnSignup.setText("Sign Up");
+        txtLogin.setText("or, Login");
+      }
+    } else if(view.getId() == R.id.imgLogo || view.getId() == R.id.backgroundLayout) {
+      InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+      inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+    }
+  }
+
+  public void showUserList() {
+    Intent intent = new Intent(getApplicationContext(), UserListActivity.class);
+    startActivity(intent);
+  }
 }
