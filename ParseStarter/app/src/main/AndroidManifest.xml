@@ -17,6 +17,9 @@
     android:theme="@style/Theme.ParseStarter"
     android:usesCleartextTraffic="true">
     <activity
+      android:name=".UserFeedActivity"
+      android:exported="false" />
+    <activity
       android:name=".UserListActivity"
       android:exported="false" />
     <activity
