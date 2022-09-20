@@ -1,4 +1,3 @@
 package com.harang.javafaithful
 
-class Dog {
-}
+class Dog(val name: String, val age: Int)
